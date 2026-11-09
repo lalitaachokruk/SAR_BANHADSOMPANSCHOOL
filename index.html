@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SAR โรงเรียนบ้านหาดส้มแป้น</title>
+    <link rel="icon" href="https://www.banhadsompan.ac.th/_files_school/86101511/data/86101511_0_20240629-000624.png">
+    <link rel="apple-touch-icon" href="https://www.banhadsompan.ac.th/_files_school/86101511/data/86101511_0_20240629-000624.png">
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/page-flip@2.0.7/dist/js/page-flip.browser.min.js"></script>
+    <style>
+        :root { --primary: #9b3432; --primary-hover: #7f0101; --bg-color: #f0f2f5; --surface: rgba(255,255,255,0.9); --text-dark: #2c3e50; --border-radius: 12px; --shadow: 0 8px 32px rgba(0,0,0,0.08); }
+        * { box-sizing: border-box; font-family: 'Prompt', sans-serif; }
+        body { margin: 0; background-color: var(--bg-color); color: var(--text-dark); }
+        .navbar { display: flex; flex-wrap: wrap; gap: 10px 20px; justify-content: space-between; align-items: center; background: var(--surface); padding: 12px 30px; box-shadow: 0 2px 15px rgba(0,0,0,0.05); position: sticky; top: 0; z-index: 100; backdrop-filter: blur(8px); }
+        .nav-brand { display: flex; align-items: center; gap: 14px; }
+        .school-logo { height: 56px; width: auto; max-width: 80px; object-fit: contain; background: none; border: none; border-radius: 0; padding: 0; filter: drop-shadow(0 2px 4px rgba(0,0,0,.18)); }
+        .nav-brand h1 { margin: 0; font-size: 1.3rem; color: var(--primary); font-weight: 600; }
+        .nav-brand p { margin: 0; font-size: 0.85rem; color: #666; }
+        .btn { padding: 8px 18px; border: none; border-radius: 20px; cursor: pointer; transition: 0.3s; font-weight: 500; text-decoration: none; display: inline-block; font-size: 0.95rem; }
+        .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+        .btn-text { background: transparent; color: #555; }
+        .btn-text:hover { background: rgba(0,0,0,0.05); }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover:not(:disabled) { background: var(--primary-hover); }
+        .btn-danger { background: #ff4757; color: white; }
+        .container { max-width: 1400px; margin: 25px auto; padding: 0 20px; }
+        .admin-panel { background: white; padding: 20px 25px; border-radius: var(--border-radius); margin-bottom: 25px; box-shadow: var(--shadow); border-top: 4px solid var(--primary); }
+        .admin-head { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 15px; }
+        .admin-head h3 { margin: 0; color: var(--primary); }
+        .admin-head span { font-size: 0.85rem; color: #888; }
+        .admin-grid { display: grid; grid-template-columns: 160px 1fr auto auto; gap: 12px; align-items: end; }
+        .admin-grid label { display: flex; flex-direction: column; gap: 6px; font-size: 0.85rem; color: #666; }
+        .admin-grid input { padding: 10px; border: 1px solid #ccc; border-radius: 8px; background: #fafafa; }
+        .content-header { margin-bottom: 14px; text-align: center; }
+        .content-header h2 { margin: 0; font-size: 1.6rem; }
+        .nav-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
+        .chips { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; align-items: center; }
+        .chips > span { color: #666; font-size: 0.85rem; margin-right: 2px; }
+        .chip { padding: 5px 14px; font-size: 0.85rem; border-radius: 20px; border: 1px solid var(--primary); background: white; color: var(--primary); cursor: pointer; }
+        .chip.active { background: var(--primary); color: white; }
+        .ebook-container { width: 100%; height: clamp(520px, calc(100dvh - 270px), 1100px); background: #e9e4e4; display: flex; justify-content: center; align-items: center; border-radius: var(--border-radius); box-shadow: var(--shadow); margin-bottom: 15px; flex-direction: column; overflow: hidden; }
+        .ebook-container:fullscreen { height: 100vh; border-radius: 0; }
+        .ebook-container:-webkit-full-screen { height: 100vh; border-radius: 0; }
+        .ebook-container.pseudo-full { position: fixed; inset: 0; z-index: 500; height: 100dvh; border-radius: 0; margin: 0; }
+        #flipHost { width: 100%; height: 100%; display: none; justify-content: center; align-items: center; }
+        #flipHost > div { width: 100%; height: 100%; }
+        .page { background: #fff; overflow: hidden; }
+        .page .ph { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #ccc; font-size: 2.2rem; }
+        .page img { position: relative; width: 100%; height: 100%; object-fit: contain; display: block; opacity: 0; transition: opacity .25s; user-select: none; -webkit-user-drag: none; pointer-events: none; }
+        .controls { display: flex; justify-content: center; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 25px; }
+        .admin-only { display: none; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); justify-content: center; align-items: center; z-index: 1000; }
+        .modal-content { background: white; padding: 30px; border-radius: var(--border-radius); width: 320px; text-align: center; box-shadow: var(--shadow); position: relative; }
+        .modal-content input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; }
+        .close-modal { position: absolute; top: 15px; right: 20px; cursor: pointer; font-size: 1.5rem; color: #aaa; }
+        #loginError { color: #ff4757; font-size: 0.85rem; min-height: 1.2em; margin: 4px 0 0; }
+        .pw-wrap { position: relative; margin: 10px 0; }
+        .modal-content .pw-wrap input { margin: 0; padding-right: 46px; }
+        .pw-toggle { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); border: none; background: transparent; cursor: pointer; font-size: 1.1rem; padding: 6px 8px; border-radius: 8px; }
+        .pw-toggle:hover { background: rgba(0,0,0,.06); }
+        @media (max-width: 700px) {
+            .navbar { padding: 10px 15px; }
+            .nav-right { width: 100%; justify-content: space-between; }
+            .chips { justify-content: flex-start; }
+            .school-logo { height: 44px; }
+            .nav-brand h1 { font-size: 1rem; }
+            .nav-brand p { font-size: 0.75rem; }
+            .container { margin: 15px auto; padding: 0 10px; }
+            .content-header h2 { font-size: 1.2rem; }
+            .ebook-container { height: clamp(380px, calc(100dvh - 300px), 700px); }
+            .admin-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">
+            <img src="https://www.banhadsompan.ac.th/_files_school/86101511/data/86101511_0_20240629-000624.png" onerror="this.onerror=null;this.src='https://ui-avatars.com/api/?name=HSP&background=9b3432&color=fff&rounded=true'" alt="โลโก้โรงเรียน" class="school-logo">
+            <div>
+                <h1>โรงเรียนบ้านหาดส้มแป้น</h1>
+                <p>รายงานการประเมินตนเอง (SAR)</p>
+            </div>
+        </div>
+        <div class="nav-right">
+            <div class="chips" id="yearChips"></div>
+            <button id="btnLogin" class="btn btn-text" onclick="openModal()">🔒 จัดการระบบ</button>
+            <button id="btnLogout" class="btn btn-text admin-only" onclick="logout()">🔓 ออกจากระบบ</button>
+        </div>
+    </nav>
+    <select id="yearSelect" style="display:none"></select>
+    <div class="container">
+        <div class="admin-panel admin-only" id="adminPanel">
+            <div class="admin-head"><h3>⚙️ ผู้ดูแลระบบ</h3><span>เพิ่ม SAR ได้หลายปี ครั้งละ 1 ปี (ปีซ้ำจะถามก่อนแทนที่)</span></div>
+            <div class="admin-grid">
+                <label>ปีการศึกษา<input type="number" id="inputYear" placeholder="เช่น 2568"></label>
+                <label>ไฟล์ SAR (PDF)<input type="file" id="inputFile" accept="application/pdf"></label>
+                <button class="btn btn-primary" id="btnUpload" onclick="uploadData()">⬆️ อัปโหลด</button>
+                <button class="btn btn-danger" onclick="deleteData()">🗑️ ลบปีที่กำลังดู</button>
+            </div>
+            <p id="uploadStatus" style="color:#666;font-size:0.9rem;margin:10px 0 0;"></p>
+        </div>
+
+        <div class="content-header"><h2 id="displayTitle">กำลังโหลดข้อมูล...</h2></div>
+
+        <div class="ebook-container" id="ebookPreview">
+            <div id="flipHost"></div>
+            <iframe id="pdfViewer" src="" width="100%" height="100%" style="border:none;display:none;"></iframe>
+            <div id="noPdfMessage" style="text-align:center;color:#888;">
+                <div style="font-size:3rem;">📖</div>
+                <div id="msgText" style="margin-top:15px;">กำลังโหลด</div>
+            </div>
+        </div>
+
+        <div class="controls" id="controls">
+            <button class="btn btn-primary" onclick="book && book.flipPrev()">◀ ก่อนหน้า</button>
+            <span id="pageNo">-</span>
+            <button class="btn btn-primary" onclick="book && book.flipNext()">ถัดไป ▶</button>
+            <button class="btn btn-text" onclick="toggleFull()">⛶ เต็มจอ</button>
+            <a href="#" id="downloadLink" class="btn btn-text" style="color:var(--primary);" target="_blank" rel="noopener">📥 ดาวน์โหลด PDF</a>
+        </div>
+    </div>
+
+    <div class="modal" id="loginModal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeModal()">&times;</span>
+            <h2 style="margin-top:0;color:var(--primary);">Admin Login</h2>
+            <input type="email" id="adminEmail" placeholder="อีเมลผู้ดูแลระบบ" autocomplete="username">
+            <div class="pw-wrap"><input type="password" id="adminPass" placeholder="รหัสผ่าน" autocomplete="current-password"><button type="button" class="pw-toggle" id="pwToggle" onclick="togglePw()" aria-label="แสดง/ซ่อนรหัสผ่าน">👁️</button></div>
+            <p id="loginError"></p>
+            <button class="btn btn-primary" id="btnDoLogin" style="width:100%;margin-top:10px;" onclick="login()">เข้าสู่ระบบ</button>
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://cyhkqbzffhuwnmynsduu.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_SkYorChF9ZRPnZwfk_7BQA_VseW8MXR';
+        const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        const $ = id => document.getElementById(id);
+        let allRecords = [], isAdmin = false, book = null, loadToken = 0;
+
+        // ===== ตั้งค่าการแสดงผลอีบุ๊ก =====
+        // true  = ปิดเล่มเห็นปกเดี่ยวตรงกลาง กางแล้ว 2|3, 4|5 ... ปกหลังเดี่ยวตรงกลาง (เหมือนหนังสือจริง)
+        // false = ปกซ้าย หน้า 2 ขวา กางตลอด (1|2, 3|4, ...)
+        const COVER_ALONE = true;
+
+        window.onload = async function() {
+            const { data: { session } } = await db.auth.getSession();
+            isAdmin = !!session; updateUI();
+            $("adminPass").addEventListener("keydown", e => { if (e.key === "Enter") login(); });
+            await fetchRecords();
+        };
+
+        async function fetchRecords(keepYear) {
+            $("displayTitle").innerText = "กำลังโหลดข้อมูล...";
+            const { data, error } = await db.from('sar_records').select('*').order('year', { ascending: false });
+            if (error) { console.error(error); $("displayTitle").innerText = "เกิดข้อผิดพลาดในการโหลดข้อมูล"; $("msgText").innerText = "โปรดตรวจสอบการตั้งค่า Table"; return; }
+            allRecords = data;
+            const select = $("yearSelect"); select.innerHTML = "";
+            if (!allRecords.length) {
+                $("displayTitle").innerText = "ยังไม่มีข้อมูล SAR ในระบบ";
+                $("msgText").innerText = "ยังไม่มีข้อมูล"; $("noPdfMessage").style.display = "block";
+                $("flipHost").style.display = "none"; $("pdfViewer").style.display = "none";
+                $("controls").style.visibility = "hidden"; renderChips(); return;
+            }
+            allRecords.forEach(r => { const o = document.createElement("option"); o.value = r.year; o.text = "ปี " + r.year; select.appendChild(o); });
+            if (keepYear) select.value = keepYear;
+            displaySelectedYear();
+        }
+
+        function displaySelectedYear() {
+            const y = parseInt($("yearSelect").value);
+            const r = allRecords.find(i => i.year === y);
+            if (!r) return;
+            $("displayTitle").innerText = r.title;
+            const sep = r.pdf_url.includes('?') ? '&' : '?';
+            $("downloadLink").href = r.pdf_url + sep + 'download=' + encodeURIComponent('SAR โรงเรียนบ้านหาดส้มแป้น ปีการศึกษา ' + r.year + '.pdf');
+            renderChips(); loadBook(r.pdf_url);
+        }
+
+        function renderChips() {
+            const sel = parseInt($("yearSelect").value), box = $("yearChips");
+            box.innerHTML = allRecords.length ? "<span>ดูย้อนหลัง:</span>" : "";
+            allRecords.forEach(r => {
+                const b = document.createElement("button");
+                b.className = "chip" + (r.year === sel ? " active" : "");
+                b.textContent = "ปี " + r.year;
+                b.onclick = () => { $("yearSelect").value = r.year; displaySelectedYear(); };
+                box.appendChild(b);
+            });
+        }
+
+        let pdfDoc = null, centerFn = null;
+        const pageCache = new Map();
+        window.addEventListener("resize", () => setTimeout(() => centerFn && centerFn(), 150));
+
+        async function loadBook(url) {
+            const token = ++loadToken, host = $("flipHost");
+            $("pdfViewer").style.display = "none"; host.style.display = "none"; $("controls").style.visibility = "hidden";
+            $("noPdfMessage").style.display = "block"; $("msgText").innerText = "⏳ กำลังเตรียมอีบุ๊ก...";
+            if (book) { try { book.destroy(); } catch (e) {} book = null; }
+            if (pdfDoc) { try { pdfDoc.destroy(); } catch (e) {} pdfDoc = null; }
+            pageCache.forEach(u => URL.revokeObjectURL(u)); pageCache.clear(); centerFn = null;
+            host.innerHTML = "";
+            try {
+                pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+                const pdf = await pdfjsLib.getDocument(url).promise;
+                if (token !== loadToken) { pdf.destroy(); return; }
+                pdfDoc = pdf;
+                const n = pdf.numPages;
+                const v1 = (await pdf.getPage(1)).getViewport({ scale: 1 });
+                const ratio = v1.height / v1.width;
+
+                // ความละเอียดเป้าหมาย (ความสูงหน้าเป็นพิกเซล) ตามหน้าจอของผู้ดู
+                const dpr = Math.min(window.devicePixelRatio || 1, 2);
+                const targetH = Math.max(1400, Math.min(3000, Math.round(screen.height * dpr)));
+
+                // สร้างหน้าเปล่าทุกหน้าก่อน (เบามาก) แล้วค่อยเรนเดอร์ตามหน้าที่กำลังดู
+                const el = document.createElement("div"); el.style.transition = "transform .4s"; host.appendChild(el);
+                const imgs = [];
+                for (let i = 0; i < n; i++) {
+                    const pg = document.createElement("div");
+                    pg.className = "page";
+                    if (i === 0 || i === n - 1) pg.setAttribute("data-density", "hard");
+                    const ph = document.createElement("div"); ph.className = "ph"; ph.textContent = i + 1;
+                    const img = document.createElement("img");
+                    img.onload = () => { img.style.opacity = 1; };
+                    pg.appendChild(ph); pg.appendChild(img); el.appendChild(pg); imgs.push(img);
+                }
+
+                const renderPage = async (i) => {
+                    const page = await pdf.getPage(i + 1);
+                    const base = page.getViewport({ scale: 1 });
+                    const vp = page.getViewport({ scale: Math.min(targetH / base.height, 3000 / base.width) });
+                    const c = document.createElement("canvas");
+                    c.width = Math.round(vp.width); c.height = Math.round(vp.height);
+                    await page.render({ canvasContext: c.getContext("2d"), viewport: vp }).promise;
+                    const blob = await new Promise(r => c.toBlob(r, "image/jpeg", 0.92));
+                    page.cleanup(); c.width = c.height = 0;
+                    return URL.createObjectURL(blob);
+                };
+
+                const queue = []; let busy = false;
+                const pump = async () => {
+                    if (busy) return; busy = true;
+                    while (queue.length && token === loadToken) {
+                        const i = queue.shift();
+                        if (pageCache.has(i)) continue;
+                        try {
+                            const u = await renderPage(i);
+                            if (token !== loadToken || pageCache.has(i)) { URL.revokeObjectURL(u); continue; }
+                            pageCache.set(i, u); imgs[i].src = u;
+                        } catch (e) { console.warn("render page", i, e); }
+                    }
+                    busy = false;
+                };
+                const want = (c) => {
+                    queue.length = 0;
+                    for (let d = 0; d <= 5; d++) for (const i of [c + d, c - d]) {
+                        if (i >= 0 && i < n && !pageCache.has(i) && !queue.includes(i)) queue.push(i);
+                    }
+                    // คืนหน่วยความจำหน้าที่อยู่ไกล
+                    for (const [i, u] of pageCache) if (Math.abs(i - c) > 14) {
+                        URL.revokeObjectURL(u); pageCache.delete(i);
+                        imgs[i].removeAttribute("src"); imgs[i].style.opacity = 0;
+                    }
+                    pump();
+                };
+
+                $("noPdfMessage").style.display = "none"; host.style.display = "flex";
+                book = new St.PageFlip(el, {
+                    width: 450, height: Math.round(450 * ratio), size: "stretch",
+                    minWidth: 260, maxWidth: 1400, minHeight: 360, maxHeight: 1800,
+                    showCover: COVER_ALONE, mobileScrollSupport: false,
+                    maxShadowOpacity: 0.45, flippingTime: 700
+                });
+
+                // เลื่อนให้ปก/ปกหลังอยู่กลางจอ
+                centerFn = () => {
+                    if (!book) return;
+                    let dx = 0;
+                    if (COVER_ALONE && book.getOrientation() === "landscape") {
+                        const i = book.getCurrentPageIndex();
+                        const pw = book.getRender().getRect().pageWidth;
+                        if (i === 0) dx = -pw / 2;
+                        else if (n % 2 === 0 && i >= n - 1) dx = pw / 2;
+                    }
+                    el.style.transform = `translateX(${dx}px)`;
+                };
+                const label = () => { $("pageNo").innerText = `หน้า ${book.getCurrentPageIndex() + 1} / ${n}`; };
+
+                book.on("flip", () => { label(); centerFn(); want(book.getCurrentPageIndex()); });
+                book.on("changeOrientation", () => centerFn());
+                book.on("init", () => centerFn());
+                book.on("update", () => centerFn());
+
+                book.loadFromHTML(el.querySelectorAll(".page"));
+                want(0); label();
+                [100, 400, 1000].forEach(t => setTimeout(() => centerFn && centerFn(), t));
+                $("controls").style.visibility = "visible";
+            } catch (err) {
+                console.error("flipbook error:", err);
+                if (token !== loadToken) return;
+                $("noPdfMessage").style.display = "none"; $("controls").style.visibility = "visible"; $("pageNo").innerText = "";
+                $("pdfViewer").style.display = "block"; $("pdfViewer").src = url;
+            }
+        }
+
+        function toggleFull() {
+            const el = $("ebookPreview");
+            const native = el.requestFullscreen || el.webkitRequestFullscreen;
+            const cur = document.fullscreenElement || document.webkitFullscreenElement;
+            if (native) {
+                if (cur) (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+                else native.call(el);
+            } else { // iPhone Safari ไม่รองรับ fullscreen จริง ใช้โหมดเต็มหน้าจอแทน
+                el.classList.toggle("pseudo-full");
+                setTimeout(() => window.dispatchEvent(new Event("resize")), 100);
+            }
+        }
+
+        // จัดตำแหน่งหนังสือใหม่อัตโนมัติเมื่อขนาดกล่องเปลี่ยน (เต็มจอ / หมุนจอ)
+        let roTimer;
+        new ResizeObserver(() => {
+            clearTimeout(roTimer);
+            roTimer = setTimeout(() => {
+                window.dispatchEvent(new Event("resize"));
+                [150, 500, 1000].forEach(t => setTimeout(() => centerFn && centerFn(), t));
+            }, 100);
+        }).observe($("ebookPreview"));
+
+        // ปุ่มลูกศรซ้าย/ขวาพลิกหน้า, Esc ออกจากโหมดเต็มหน้าจอ
+        document.addEventListener("keydown", e => {
+            if (e.key === "Escape") { $("ebookPreview").classList.remove("pseudo-full"); return; }
+            if (!book || /INPUT|TEXTAREA/.test(e.target.tagName)) return;
+            if (e.key === "ArrowLeft") book.flipPrev(); else if (e.key === "ArrowRight") book.flipNext();
+        });
+
+        function storagePathFromUrl(url) {
+            const m = '/sar_files/', i = url.indexOf(m);
+            return i === -1 ? null : decodeURIComponent(url.slice(i + m.length).split('?')[0]);
+        }
+        async function removeFileByUrl(url) { const p = storagePathFromUrl(url); if (p) await db.storage.from('sar_files').remove([p]); }
+
+        async function uploadData() {
+            const year = $("inputYear").value, file = $("inputFile").files[0], st = $("uploadStatus"), btn = $("btnUpload");
+            if (!isAdmin) { alert("กรุณาเข้าสู่ระบบก่อน"); return; }
+            if (!year || !file) { alert("กรุณาใส่ปีการศึกษาและเลือกไฟล์ PDF"); return; }
+            const existing = allRecords.find(r => r.year === parseInt(year));
+            if (existing && !confirm(`มี SAR ปี ${year} อยู่แล้ว ต้องการแทนที่ใช่หรือไม่?`)) return;
+            btn.disabled = true; st.innerText = "⏳ กำลังอัปโหลดไฟล์ PDF... กรุณารอสักครู่";
+            const path = `sar_${year}_${Date.now()}.pdf`;
+            const { error: upErr } = await db.storage.from('sar_files').upload(path, file, { contentType: 'application/pdf' });
+            if (upErr) { console.error(upErr); st.innerText = "❌ อัปโหลดไฟล์ไม่สำเร็จ (ตรวจสอบสิทธิ์ / Storage Bucket)"; btn.disabled = false; return; }
+            st.innerText = "⏳ กำลังบันทึกข้อมูล...";
+            const url = db.storage.from('sar_files').getPublicUrl(path).data.publicUrl;
+            if (existing) await db.from('sar_records').delete().eq('year', existing.year);
+            const { error: inErr } = await db.from('sar_records').insert([{ year: parseInt(year), title: `รายงาน SAR โรงเรียนบ้านหาดส้มแป้น ปีการศึกษา ${year}`, pdf_url: url }]);
+            if (inErr) { console.error(inErr); await db.storage.from('sar_files').remove([path]); st.innerText = "❌ บันทึกข้อมูลลงตารางไม่สำเร็จ"; btn.disabled = false; return; }
+            if (existing) await removeFileByUrl(existing.pdf_url);
+            st.innerText = "✅ อัปโหลดเสร็จสมบูรณ์!";
+            $("inputYear").value = ""; $("inputFile").value = ""; btn.disabled = false;
+            await fetchRecords(year);
+            setTimeout(() => { st.innerText = ""; }, 3000);
+        }
+
+        async function deleteData() {
+            if (!isAdmin) return;
+            const y = parseInt($("yearSelect").value), r = allRecords.find(i => i.year === y);
+            if (!r || !confirm(`คุณต้องการลบข้อมูล SAR ปี ${y} ใช่หรือไม่?`)) return;
+            const { error } = await db.from('sar_records').delete().eq('year', y);
+            if (error) { console.error(error); alert("ลบข้อมูลไม่สำเร็จ (ตรวจสอบสิทธิ์ผู้ดูแล)"); return; }
+            await removeFileByUrl(r.pdf_url);
+            alert("ลบข้อมูลเรียบร้อยแล้ว"); await fetchRecords();
+        }
+
+        function openModal() { $("loginError").innerText = ""; $("loginModal").style.display = "flex"; }
+        function closeModal() { $("loginModal").style.display = "none"; $("adminPass").type = "password"; $("pwToggle").textContent = "👁️"; }
+        function togglePw() {
+            const i = $("adminPass"), show = i.type === "password";
+            i.type = show ? "text" : "password";
+            $("pwToggle").textContent = show ? "🙈" : "👁️";
+        }
+        async function login() {
+            const email = $("adminEmail").value.trim(), password = $("adminPass").value, btn = $("btnDoLogin");
+            if (!email || !password) { $("loginError").innerText = "กรุณากรอกอีเมลและรหัสผ่าน"; return; }
+            btn.disabled = true;
+            const { error } = await db.auth.signInWithPassword({ email, password });
+            btn.disabled = false;
+            if (error) { $("loginError").innerText = "อีเมลหรือรหัสผ่านไม่ถูกต้อง"; return; }
+            $("adminPass").value = ""; isAdmin = true; closeModal(); updateUI();
+        }
+        async function logout() { await db.auth.signOut(); isAdmin = false; updateUI(); }
+        function updateUI() {
+            document.querySelectorAll('.admin-only').forEach(el => el.style.display = isAdmin ? "block" : "none");
+            $('btnLogin').style.display = isAdmin ? "none" : "inline-block";
+            if (isAdmin) $('btnLogout').style.display = "inline-block";
+        }
+    </script>
+</body>
+</html>
