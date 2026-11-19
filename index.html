@@ -11,6 +11,12 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/page-flip@2.0.7/dist/js/page-flip.browser.min.js"></script>
     <style>
+        .guide-panel { display: none; position: relative; background: #fff; border-left: 4px solid var(--primary); border-radius: var(--border-radius); box-shadow: var(--shadow); padding: 16px 48px 16px 20px; margin-bottom: 20px; }
+        .guide-panel.show { display: block; }
+        .guide-panel h3 { margin: 0 0 8px; color: var(--primary); font-size: 1.05rem; }
+        .guide-panel ol { margin: 0; padding-left: 20px; line-height: 1.8; font-size: 0.92rem; }
+        .guide-close { position: absolute; top: 10px; right: 14px; border: none; background: none; font-size: 1.1rem; cursor: pointer; color: #888; }
+        .guide-close:hover { color: var(--primary); }
         .year-dropdown { position: relative; display: inline-block; }
         .year-btn { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 999px; border: 1px solid var(--primary); background: var(--primary); color: #fff; font-size: 0.9rem; cursor: pointer; font-family: inherit; }
         .year-btn::after { content: "▾"; font-size: 0.8rem; }
@@ -122,9 +128,9 @@
             <button class="year-btn" id="yearBtn" onclick="toggleYearMenu(event)"><span id="yearBtnText">ดูย้อนหลัง:</span> <span id="yearBtnLabel">-</span></button>
             <div class="year-menu" id="yearMenu"></div>
         </div>
-            <button id="langBtn" class="lang-btn" onclick="toggleLang()">
+            <button id="guideBtn" class="btn btn-text" onclick="toggleGuide()">📖 คู่มือ</button>
+            <button id="langBtn" class="lang-btn" onclick="toggleLang()" title="เปลี่ยนภาษา / Change language">
             <span class="flag" id="langFlag">🇬🇧</span>
-            <span id="langLabel">English</span>
             </button>
             <button id="btnLogin" class="btn btn-text" onclick="openModal()">🔒 จัดการระบบ</button>
             <button id="btnLogout" class="btn btn-text admin-only" onclick="logout()">🔓 ออกจากระบบ</button>
@@ -132,6 +138,17 @@
     </nav>
     <select id="yearSelect" style="display:none"></select>
     <div class="container">
+        <div class="guide-panel" id="guidePanel">
+    <button class="guide-close" onclick="toggleGuide(false)" aria-label="ปิดคู่มือ">✕</button>
+    <h3>📖 คู่มือการใช้งาน</h3>
+    <ol>
+        <li>เลือกปีที่ต้องการดูจากเมนู "ดูย้อนหลัง" มุมขวาบน</li>
+        <li>กดที่หน้าหนังสือ หรือใช้ปุ่ม "ก่อนหน้า" / "ถัดไป" เพื่อพลิกหน้า</li>
+        <li>ใช้ปุ่ม "เต็มจอ" เพื่อดูแบบเต็มหน้าจอ กด Esc เพื่อออก</li>
+        <li>ใช้ปุ่ม "ดาวน์โหลด PDF" เพื่อบันทึกไฟล์ไว้ดูภายหลัง</li>
+        <li>ปุ่มธงมุมขวาใช้สลับภาษาไทยและอังกฤษ</li>
+    </ol>
+</div>
         <div class="admin-panel admin-only" id="adminPanel">
             <div class="admin-head"><h3 id="adminTitle">⚙️ ผู้ดูแลระบบ</h3><span id="adminDesc">เพิ่ม SAR ได้หลายปี ครั้งละ 1 ปี (ปีซ้ำจะถามก่อนแทนที่)</span></div>
             <div class="admin-grid">
@@ -192,6 +209,7 @@
         $("adminPass").addEventListener("keydown", e => { if (e.key === "Enter") login(); });
         await fetchRecords();
         applyLang();
+        toggleGuide(localStorage.getItem("guideOpen") !== "0");
         countVisit();
         };
 
@@ -530,7 +548,6 @@ function applyLang() {
     document.querySelector('[onclick="toggleFull()"]').innerText = t.fullscreen;
     $("downloadLink").innerText = t.download;
     $("langFlag").innerText = lang === "th" ? "🇬🇧" : "🇹🇭";
-    $("langLabel").innerText = lang === "th" ? "English" : "ไทย";
     $("yearBtnText").innerText = t.viewYears;
     $("adminTitle").innerText = t.adminTitle;
     $("adminDesc").innerText = t.adminDesc;
@@ -541,10 +558,16 @@ function applyLang() {
     renderChips();
 }
 
-function toggleLang() {
-    lang = lang === "th" ? "en" : "th";
-    localStorage.setItem("lang", lang);
-    applyLang();
+    function toggleLang() {
+       lang = lang === "th" ? "en" : "th";
+       localStorage.setItem("lang", lang);
+       applyLang();
+}
+    function toggleGuide(force) {
+        const p = $("guidePanel");
+        const show = typeof force === "boolean" ? force : !p.classList.contains("show");
+        p.classList.toggle("show", show);
+       localStorage.setItem("guideOpen", show ? "1" : "0");
 }
     </script>
 </body>
