@@ -61,6 +61,16 @@
         .modal-content .pw-wrap input { margin: 0; padding-right: 46px; }
         .pw-toggle { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); border: none; background: transparent; cursor: pointer; font-size: 1.1rem; padding: 6px 8px; border-radius: 8px; }
         .pw-toggle:hover { background: rgba(0,0,0,.06); }
+        .visit-pill {
+        display: inline-flex; align-items: center; gap: 10px;
+        padding: 9px 22px; border-radius: 999px;
+        background: #fbeeee; border: 2px solid #e8b4b4;
+        color: #7f0101; font-weight: 500; font-size: 1rem;
+        box-shadow: 0 4px 14px rgba(127, 1, 1, 0.12);
+        white-space: nowrap;
+        }
+        .visit-pill svg { width: 24px; height: 24px; fill: currentColor; flex-shrink: 0; }
+        .visit-pill .num { font-size: 1.2rem; font-weight: 600; }
         @media (max-width: 700px) {
             .navbar { padding: 10px 15px; }
             .nav-right { width: 100%; justify-content: space-between; }
@@ -72,6 +82,9 @@
             .content-header h2 { font-size: 1.2rem; }
             .ebook-container { height: clamp(380px, calc(100dvh - 300px), 700px); }
             .admin-grid { grid-template-columns: 1fr; }
+            .visit-pill { padding: 6px 14px; font-size: 0.85rem; gap: 6px; }
+            .visit-pill svg { width: 18px; height: 18px; }
+            .visit-pill .num { font-size: 1rem; }
         }
     </style>
 </head>
@@ -85,6 +98,15 @@
             </div>
         </div>
         <div class="nav-right">
+            <div class="visit-pill" id="visitCounter">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+            <rect x="3" y="11" width="4" height="10" rx="1"/>
+            <rect x="10" y="4" width="4" height="17" rx="1"/>
+            <rect x="17" y="8" width="4" height="13" rx="1"/>
+        </svg>
+            <span>เข้าชมรวม:</span>
+        <span class="num" id="visitCount">-</span>
+        </div>
             <div class="chips" id="yearChips"></div>
             <button id="btnLogin" class="btn btn-text" onclick="openModal()">🔒 จัดการระบบ</button>
             <button id="btnLogout" class="btn btn-text admin-only" onclick="logout()">🔓 ออกจากระบบ</button>
@@ -147,10 +169,11 @@
         const COVER_ALONE = true;
 
         window.onload = async function() {
-            const { data: { session } } = await db.auth.getSession();
-            isAdmin = !!session; updateUI();
-            $("adminPass").addEventListener("keydown", e => { if (e.key === "Enter") login(); });
-            await fetchRecords();
+        const { data: { session } } = await db.auth.getSession();
+        isAdmin = !!session; updateUI();
+        $("adminPass").addEventListener("keydown", e => { if (e.key === "Enter") login(); });
+        await fetchRecords();
+        countVisit();
         };
 
         async function fetchRecords(keepYear) {
@@ -398,6 +421,28 @@
             $('btnLogin').style.display = isAdmin ? "none" : "inline-block";
             if (isAdmin) $('btnLogout').style.display = "inline-block";
         }
+        async function countVisit() {
+            
+    // กันการนับซ้ำเมื่อรีเฟรชในเซสชันเดียวกัน (ถ้าไม่ต้องการ ลบ 3 บรรทัดนี้ได้)
+    const alreadyCounted = sessionStorage.getItem("visit_counted");
+    try {
+        let total;
+        if (!alreadyCounted) {
+            const { data, error } = await db.rpc('increment_visit');
+            if (error) throw error;
+            total = data;
+            sessionStorage.setItem("visit_counted", "1");
+        } else {
+            const { data, error } = await db.rpc('get_visits');
+            if (error) throw error;
+            total = data;
+        }
+        $("visitCount").innerText = Number(total).toLocaleString("th-TH");
+    } catch (e) {
+        console.error("visit counter error:", e);
+        $("visitCount").innerText = "-";
+    }
+}
     </script>
 </body>
 </html>
