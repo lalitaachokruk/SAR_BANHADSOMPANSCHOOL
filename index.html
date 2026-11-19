@@ -16,7 +16,6 @@
         .guide-panel.show { display: block; }
         .guide-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
         .guide-head h3 { margin: 0; color: var(--primary); font-size: 1rem; }
-        .guide-close { border: none; background: none; font-size: 1.1rem; cursor: pointer; color: #888; }
         .guide-close:hover { color: var(--primary); }
         .guide-panel ol { margin: 0; padding-left: 20px; line-height: 1.8; font-size: 0.9rem; }
         .guide-close { position: absolute; top: 10px; right: 14px; border: none; background: none; font-size: 1.1rem; cursor: pointer; color: #888; }
@@ -164,11 +163,11 @@
         </div>
 
         <div class="controls" id="controls">
-            <button class="btn btn-primary" onclick="book && book.flipPrev()">◀ ก่อนหน้า</button>
-            <span id="pageNo">-</span>
-            <button class="btn btn-primary" onclick="book && book.flipNext()">ถัดไป ▶</button>
-            <button class="btn btn-text" onclick="toggleFull()">⛶ เต็มจอ</button>
-            <a href="#" id="downloadLink" class="btn btn-text" style="color:var(--primary);" target="_blank" rel="noopener">📥 ดาวน์โหลด PDF</a>
+    <button id="btnPrev" class="btn btn-primary" onclick="book && book.flipPrev()">◀ ก่อนหน้า</button>
+    <span id="pageNo">-</span>
+    <button id="btnNext" class="btn btn-primary" onclick="book && book.flipNext()">ถัดไป ▶</button>
+    <button id="btnFull" class="btn btn-text" onclick="toggleFull()">⛶ เต็มจอ</button>
+    <a href="#" id="downloadLink" class="btn btn-text" style="color:var(--primary);" target="_blank" rel="noopener">📥 ดาวน์โหลด PDF</a>
         </div>
     </div>
 
@@ -487,8 +486,6 @@
 
         const I18N = {
     th: {
-        title: "รายงาน SAR โรงเรียนบ้านหาดส้มแป้น",
-        subtitle: "รายงานการประเมินตนเอง (SAR)",
         visits: "เข้าชมรวม:",
         viewYears: "ดูย้อนหลัง:",
         manage: "🔒 จัดการระบบ",
@@ -497,17 +494,13 @@
         next: "ถัดไป ▶",
         fullscreen: "⛶ เต็มจอ",
         download: "📥 ดาวน์โหลด PDF",
-        year: "ปี ",
         pageOf: "หน้า ",
-        of: " / ",
         adminTitle: "⚙️ ผู้ดูแลระบบ",
-        adminDesc: "เพิ่ม SAR ได้หลายปี ครั้งละ 1 ปี (ปีซ้ำจะถามก่อนแทนที่)", // en: "Add SAR reports, one year at a time (duplicates will ask before replacing)"
-        lblYear: "ปีการศึกษา",                  // en: "Academic year"
-        lblFile: "ไฟล์ SAR (PDF)",              // en: "SAR file (PDF)"
-        btnUpload: "⬆️ อัปโหลด",                // en: "⬆️ Upload"
-        btnDelete: "🗑️ ลบปีที่กำลังดู",          // en: "🗑️ Delete this year"
-        loading: "กำลังโหลดข้อมูล...",           // en: "Loading data..."
-        guideBtn: "📖 คู่มือ",
+        adminDesc: "เพิ่ม SAR ได้หลายปี ครั้งละ 1 ปี (ปีซ้ำจะถามก่อนแทนที่)",
+        lblYear: "ปีการศึกษา",
+        lblFile: "ไฟล์ SAR (PDF)",
+        btnUpload: "⬆️ อัปโหลด",
+        btnDelete: "🗑️ ลบปีที่กำลังดู",
         guideTitle: "คู่มือการใช้งาน",
         g1: "เลือกปีที่ต้องการดูจากเมนู \"ดูย้อนหลัง\" มุมขวาบน",
         g2: "กดที่หน้าหนังสือ หรือใช้ปุ่ม \"ก่อนหน้า\" / \"ถัดไป\" เพื่อพลิกหน้า",
@@ -516,8 +509,6 @@
         g5: "ปุ่มธงใช้สลับภาษาไทยและอังกฤษ"
     },
     en: {
-        title: "SAR Report - Banhad Sompan School",
-        subtitle: "Self-Assessment Report (SAR)",
         visits: "Total visits:",
         viewYears: "Archive:",
         manage: "🔒 Admin",
@@ -526,10 +517,13 @@
         next: "Next ▶",
         fullscreen: "⛶ Fullscreen",
         download: "📥 Download PDF",
-        loading: "Loading...",
-        year: "Year ",
         pageOf: "Page ",
-        of: " / "
+        adminTitle: "⚙️ Administrator",
+        adminDesc: "Add SAR reports, one year at a time (duplicates will ask before replacing)",
+        lblYear: "Academic year",
+        lblFile: "SAR file (PDF)",
+        btnUpload: "⬆️ Upload",
+        btnDelete: "🗑️ Delete this year",
         guideTitle: "User Guide",
         g1: "Choose a year from the \"Archive\" menu at the top right.",
         g2: "Click the book or use \"Previous\" / \"Next\" to turn pages.",
@@ -538,6 +532,7 @@
         g5: "The flag button switches between Thai and English."
     }
 };
+        
 let lang = localStorage.getItem("lang") || "th";
 
 function applyLang() {
@@ -547,9 +542,9 @@ function applyLang() {
     $("chipsLabel")?.remove();
     $("btnLogin").innerText = t.manage;
     $("btnLogout").innerText = t.logout;
-    document.querySelector('[onclick="book && book.flipPrev()"]').innerText = t.prev;
-    document.querySelector('[onclick="book && book.flipNext()"]').innerText = t.next;
-    document.querySelector('[onclick="toggleFull()"]').innerText = t.fullscreen;
+    $("btnPrev").innerText = t.prev;
+    $("btnNext").innerText = t.next;
+    $("btnFull").innerText = t.fullscreen;
     $("downloadLink").innerText = t.download;
     $("langFlag").innerText = lang === "th" ? "🇬🇧" : "🇹🇭";
     $("yearBtnText").innerText = t.viewYears;
