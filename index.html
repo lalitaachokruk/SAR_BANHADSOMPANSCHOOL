@@ -11,10 +11,14 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/page-flip@2.0.7/dist/js/page-flip.browser.min.js"></script>
     <style>
-        .guide-panel { display: none; position: relative; background: #fff; border-left: 4px solid var(--primary); border-radius: var(--border-radius); box-shadow: var(--shadow); padding: 16px 48px 16px 20px; margin-bottom: 20px; }
+        .guide-fab { position: fixed; right: 20px; bottom: 20px; z-index: 300; width: 52px; height: 52px; border-radius: 50%; border: none; background: var(--primary); color: #fff; font-size: 1.4rem; cursor: pointer; box-shadow: 0 6px 18px rgba(0,0,0,0.25); }
+        .guide-panel { display: none; position: fixed; right: 20px; bottom: 84px; z-index: 300; width: min(340px, calc(100vw - 40px)); background: #fff; border-radius: var(--border-radius); box-shadow: 0 10px 30px rgba(0,0,0,0.2); padding: 16px 18px; border-top: 4px solid var(--primary); }
         .guide-panel.show { display: block; }
-        .guide-panel h3 { margin: 0 0 8px; color: var(--primary); font-size: 1.05rem; }
-        .guide-panel ol { margin: 0; padding-left: 20px; line-height: 1.8; font-size: 0.92rem; }
+        .guide-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .guide-head h3 { margin: 0; color: var(--primary); font-size: 1rem; }
+        .guide-close { border: none; background: none; font-size: 1.1rem; cursor: pointer; color: #888; }
+        .guide-close:hover { color: var(--primary); }
+        .guide-panel ol { margin: 0; padding-left: 20px; line-height: 1.8; font-size: 0.9rem; }
         .guide-close { position: absolute; top: 10px; right: 14px; border: none; background: none; font-size: 1.1rem; cursor: pointer; color: #888; }
         .guide-close:hover { color: var(--primary); }
         .year-dropdown { position: relative; display: inline-block; }
@@ -128,7 +132,6 @@
             <button class="year-btn" id="yearBtn" onclick="toggleYearMenu(event)"><span id="yearBtnText">ดูย้อนหลัง:</span> <span id="yearBtnLabel">-</span></button>
             <div class="year-menu" id="yearMenu"></div>
         </div>
-            <button id="guideBtn" class="btn btn-text" onclick="toggleGuide()">📖 คู่มือ</button>
             <button id="langBtn" class="lang-btn" onclick="toggleLang()" title="เปลี่ยนภาษา / Change language">
             <span class="flag" id="langFlag">🇬🇧</span>
             </button>
@@ -138,17 +141,6 @@
     </nav>
     <select id="yearSelect" style="display:none"></select>
     <div class="container">
-        <div class="guide-panel" id="guidePanel">
-    <button class="guide-close" onclick="toggleGuide(false)" aria-label="ปิดคู่มือ">✕</button>
-    <h3>📖 คู่มือการใช้งาน</h3>
-    <ol>
-        <li>เลือกปีที่ต้องการดูจากเมนู "ดูย้อนหลัง" มุมขวาบน</li>
-        <li>กดที่หน้าหนังสือ หรือใช้ปุ่ม "ก่อนหน้า" / "ถัดไป" เพื่อพลิกหน้า</li>
-        <li>ใช้ปุ่ม "เต็มจอ" เพื่อดูแบบเต็มหน้าจอ กด Esc เพื่อออก</li>
-        <li>ใช้ปุ่ม "ดาวน์โหลด PDF" เพื่อบันทึกไฟล์ไว้ดูภายหลัง</li>
-        <li>ปุ่มธงมุมขวาใช้สลับภาษาไทยและอังกฤษ</li>
-    </ol>
-</div>
         <div class="admin-panel admin-only" id="adminPanel">
             <div class="admin-head"><h3 id="adminTitle">⚙️ ผู้ดูแลระบบ</h3><span id="adminDesc">เพิ่ม SAR ได้หลายปี ครั้งละ 1 ปี (ปีซ้ำจะถามก่อนแทนที่)</span></div>
             <div class="admin-grid">
@@ -209,7 +201,6 @@
         $("adminPass").addEventListener("keydown", e => { if (e.key === "Enter") login(); });
         await fetchRecords();
         applyLang();
-        toggleGuide(localStorage.getItem("guideOpen") !== "0");
         countVisit();
         };
 
@@ -516,6 +507,13 @@
         btnUpload: "⬆️ อัปโหลด",                // en: "⬆️ Upload"
         btnDelete: "🗑️ ลบปีที่กำลังดู",          // en: "🗑️ Delete this year"
         loading: "กำลังโหลดข้อมูล...",           // en: "Loading data..."
+        guideBtn: "📖 คู่มือ",
+        guideTitle: "คู่มือการใช้งาน",
+        g1: "เลือกปีที่ต้องการดูจากเมนู \"ดูย้อนหลัง\" มุมขวาบน",
+        g2: "กดที่หน้าหนังสือ หรือใช้ปุ่ม \"ก่อนหน้า\" / \"ถัดไป\" เพื่อพลิกหน้า",
+        g3: "ใช้ปุ่ม \"เต็มจอ\" เพื่อดูแบบเต็มหน้าจอ กด Esc เพื่อออก",
+        g4: "ใช้ปุ่ม \"ดาวน์โหลด PDF\" เพื่อบันทึกไฟล์ไว้ดูภายหลัง",
+        g5: "ปุ่มธงใช้สลับภาษาไทยและอังกฤษ"
     },
     en: {
         title: "SAR Report - Banhad Sompan School",
@@ -532,6 +530,12 @@
         year: "Year ",
         pageOf: "Page ",
         of: " / "
+        guideTitle: "User Guide",
+        g1: "Choose a year from the \"Archive\" menu at the top right.",
+        g2: "Click the book or use \"Previous\" / \"Next\" to turn pages.",
+        g3: "Use \"Fullscreen\" for full-screen view. Press Esc to exit.",
+        g4: "Use \"Download PDF\" to save the file for later.",
+        g5: "The flag button switches between Thai and English."
     }
 };
 let lang = localStorage.getItem("lang") || "th";
@@ -555,6 +559,8 @@ function applyLang() {
     $("lblFile").innerText = t.lblFile;
     $("btnUpload").innerText = t.btnUpload;
     $("btnDelete").innerText = t.btnDelete;
+    $("guideTitle").innerText = t.guideTitle;
+    ["g1","g2","g3","g4","g5"].forEach(k => $(k).innerText = t[k]);
     renderChips();
 }
 
@@ -564,11 +570,26 @@ function applyLang() {
        applyLang();
 }
     function toggleGuide(force) {
-        const p = $("guidePanel");
-        const show = typeof force === "boolean" ? force : !p.classList.contains("show");
-        p.classList.toggle("show", show);
-       localStorage.setItem("guideOpen", show ? "1" : "0");
+    const p = $("guidePanel");
+    const show = typeof force === "boolean" ? force : !p.classList.contains("show");
+    p.classList.toggle("show", show);
 }
     </script>
+
+        <button id="guideFab" class="guide-fab" onclick="toggleGuide(true)" aria-label="คู่มือ">📖</button>
+<div class="guide-panel" id="guidePanel" role="dialog" aria-labelledby="guideTitle">
+    <div class="guide-head">
+        <h3 id="guideTitle">คู่มือการใช้งาน</h3>
+        <button class="guide-close" onclick="toggleGuide(false)" aria-label="ปิด">✕</button>
+    </div>
+    <ol>
+        <li id="g1"></li>
+        <li id="g2"></li>
+        <li id="g3"></li>
+        <li id="g4"></li>
+        <li id="g5"></li>
+    </ol>
+</div>
+        
 </body>
 </html>
