@@ -11,6 +11,17 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/page-flip@2.0.7/dist/js/page-flip.browser.min.js"></script>
     <style>
+        .year-dropdown { position: relative; display: inline-block; }
+        .year-btn { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 999px; border: 1px solid var(--primary); background: var(--primary); color: #fff; font-size: 0.9rem; cursor: pointer; font-family: inherit; }
+        .year-btn::after { content: "▾"; font-size: 0.8rem; }
+        .year-menu { display: none; position: absolute; right: 0; top: calc(100% + 6px); min-width: 130px; max-height: 300px; overflow-y: auto; background: #fff; border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,0.15); padding: 6px; z-index: 200; }
+        .year-menu.open { display: block; }
+        .year-item { display: block; width: 100%; text-align: left; padding: 8px 12px; border: none; background: none; border-radius: 6px; cursor: pointer; font-size: 0.9rem; color: var(--text-dark); font-family: inherit; }
+        .year-item:hover { background: #f5f0f0; }
+        .year-item.active { background: var(--primary); color: #fff; }
+        .lang-btn { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; border: 1px solid #ddd; background: #fff; cursor: pointer; font-size: 0.9rem; color: #444; }
+        .lang-btn:hover { background: #f5f5f5; }
+        .lang-btn .flag { font-size: 1.1rem; }
         :root { --primary: #9b3432; --primary-hover: #7f0101; --bg-color: #f0f2f5; --surface: rgba(255,255,255,0.9); --text-dark: #2c3e50; --border-radius: 12px; --shadow: 0 8px 32px rgba(0,0,0,0.08); }
         * { box-sizing: border-box; font-family: 'Prompt', sans-serif; }
         body { margin: 0; background-color: var(--bg-color); color: var(--text-dark); }
@@ -104,10 +115,17 @@
             <rect x="10" y="4" width="4" height="17" rx="1"/>
             <rect x="17" y="8" width="4" height="13" rx="1"/>
         </svg>
-            <span>เข้าชมรวม:</span>
+            <span id="visitLabel">เข้าชมรวม:</span>
         <span class="num" id="visitCount">-</span>
         </div>
-            <div class="chips" id="yearChips"></div>
+            <div class="year-dropdown">
+            <button class="year-btn" id="yearBtn" onclick="toggleYearMenu(event)"><span id="yearBtnText">ดูย้อนหลัง:</span> <span id="yearBtnLabel">-</span></button>
+            <div class="year-menu" id="yearMenu"></div>
+        </div>
+            <button id="langBtn" class="lang-btn" onclick="toggleLang()">
+            <span class="flag" id="langFlag">🇬🇧</span>
+            <span id="langLabel">English</span>
+            </button>
             <button id="btnLogin" class="btn btn-text" onclick="openModal()">🔒 จัดการระบบ</button>
             <button id="btnLogout" class="btn btn-text admin-only" onclick="logout()">🔓 ออกจากระบบ</button>
         </div>
@@ -115,13 +133,13 @@
     <select id="yearSelect" style="display:none"></select>
     <div class="container">
         <div class="admin-panel admin-only" id="adminPanel">
-            <div class="admin-head"><h3>⚙️ ผู้ดูแลระบบ</h3><span>เพิ่ม SAR ได้หลายปี ครั้งละ 1 ปี (ปีซ้ำจะถามก่อนแทนที่)</span></div>
+            <div class="admin-head"><h3 id="adminTitle">⚙️ ผู้ดูแลระบบ</h3><span id="adminDesc">เพิ่ม SAR ได้หลายปี ครั้งละ 1 ปี (ปีซ้ำจะถามก่อนแทนที่)</span></div>
             <div class="admin-grid">
-                <label>ปีการศึกษา<input type="number" id="inputYear" placeholder="เช่น 2568"></label>
-                <label>ไฟล์ SAR (PDF)<input type="file" id="inputFile" accept="application/pdf"></label>
+                <label><span id="lblYear">ปีการศึกษา</span><input type="number" id="inputYear" placeholder="เช่น 2568"></label>
+                <label><span id="lblFile">ไฟล์ SAR (PDF)</span><input type="file" id="inputFile" accept="application/pdf"></label>
                 <button class="btn btn-primary" id="btnUpload" onclick="uploadData()">⬆️ อัปโหลด</button>
-                <button class="btn btn-danger" onclick="deleteData()">🗑️ ลบปีที่กำลังดู</button>
-            </div>
+                <button class="btn btn-danger" id="btnDelete" onclick="deleteData()">🗑️ ลบปีที่กำลังดู</button>
+         </div>
             <p id="uploadStatus" style="color:#666;font-size:0.9rem;margin:10px 0 0;"></p>
         </div>
 
@@ -173,6 +191,7 @@
         isAdmin = !!session; updateUI();
         $("adminPass").addEventListener("keydown", e => { if (e.key === "Enter") login(); });
         await fetchRecords();
+        applyLang();
         countVisit();
         };
 
@@ -204,16 +223,29 @@
         }
 
         function renderChips() {
-            const sel = parseInt($("yearSelect").value), box = $("yearChips");
-            box.innerHTML = allRecords.length ? "<span>ดูย้อนหลัง:</span>" : "";
+            const sel = parseInt($("yearSelect").value), menu = $("yearMenu");
+            $("yearBtnLabel").textContent = sel ? "ปี " + sel : "-";
+            menu.innerHTML = "";
             allRecords.forEach(r => {
-                const b = document.createElement("button");
-                b.className = "chip" + (r.year === sel ? " active" : "");
-                b.textContent = "ปี " + r.year;
-                b.onclick = () => { $("yearSelect").value = r.year; displaySelectedYear(); };
-                box.appendChild(b);
-            });
-        }
+            const b = document.createElement("button");
+            b.className = "year-item" + (r.year === sel ? " active" : "");
+            b.textContent = "ปี " + r.year;
+            b.onclick = () => {
+            $("yearSelect").value = r.year;
+            menu.classList.remove("open");
+            displaySelectedYear();
+        };
+            menu.appendChild(b);
+        });
+     }
+
+        function toggleYearMenu(e) {
+            e.stopPropagation();
+            $("yearMenu").classList.toggle("open");
+     }
+
+        // กดที่อื่นแล้วปิดเมนู
+        document.addEventListener("click", () => $("yearMenu").classList.remove("open"));
 
         let pdfDoc = null, centerFn = null;
         const pageCache = new Map();
@@ -312,7 +344,7 @@
                     }
                     el.style.transform = `translateX(${dx}px)`;
                 };
-                const label = () => { $("pageNo").innerText = `หน้า ${book.getCurrentPageIndex() + 1} / ${n}`; };
+                const label = () => { $("pageNo").innerText = `${I18N[lang].pageOf}${book.getCurrentPageIndex() + 1} / ${n}`; };
 
                 book.on("flip", () => { label(); centerFn(); want(book.getCurrentPageIndex()); });
                 book.on("changeOrientation", () => centerFn());
@@ -442,6 +474,77 @@
         console.error("visit counter error:", e);
         $("visitCount").innerText = "-";
     }
+}
+
+        const I18N = {
+    th: {
+        title: "รายงาน SAR โรงเรียนบ้านหาดส้มแป้น",
+        subtitle: "รายงานการประเมินตนเอง (SAR)",
+        visits: "เข้าชมรวม:",
+        viewYears: "ดูย้อนหลัง:",
+        manage: "🔒 จัดการระบบ",
+        logout: "🔓 ออกจากระบบ",
+        prev: "◀ ก่อนหน้า",
+        next: "ถัดไป ▶",
+        fullscreen: "⛶ เต็มจอ",
+        download: "📥 ดาวน์โหลด PDF",
+        year: "ปี ",
+        pageOf: "หน้า ",
+        of: " / ",
+        adminTitle: "⚙️ ผู้ดูแลระบบ",
+        adminDesc: "เพิ่ม SAR ได้หลายปี ครั้งละ 1 ปี (ปีซ้ำจะถามก่อนแทนที่)", // en: "Add SAR reports, one year at a time (duplicates will ask before replacing)"
+        lblYear: "ปีการศึกษา",                  // en: "Academic year"
+        lblFile: "ไฟล์ SAR (PDF)",              // en: "SAR file (PDF)"
+        btnUpload: "⬆️ อัปโหลด",                // en: "⬆️ Upload"
+        btnDelete: "🗑️ ลบปีที่กำลังดู",          // en: "🗑️ Delete this year"
+        loading: "กำลังโหลดข้อมูล...",           // en: "Loading data..."
+    },
+    en: {
+        title: "SAR Report - Banhad Sompan School",
+        subtitle: "Self-Assessment Report (SAR)",
+        visits: "Total visits:",
+        viewYears: "Archive:",
+        manage: "🔒 Admin",
+        logout: "🔓 Logout",
+        prev: "◀ Previous",
+        next: "Next ▶",
+        fullscreen: "⛶ Fullscreen",
+        download: "📥 Download PDF",
+        loading: "Loading...",
+        year: "Year ",
+        pageOf: "Page ",
+        of: " / "
+    }
+};
+let lang = localStorage.getItem("lang") || "th";
+
+function applyLang() {
+    const t = I18N[lang];
+    document.documentElement.lang = lang;
+    $("visitLabel").innerText = t.visits;
+    $("chipsLabel")?.remove();
+    $("btnLogin").innerText = t.manage;
+    $("btnLogout").innerText = t.logout;
+    document.querySelector('[onclick="book && book.flipPrev()"]').innerText = t.prev;
+    document.querySelector('[onclick="book && book.flipNext()"]').innerText = t.next;
+    document.querySelector('[onclick="toggleFull()"]').innerText = t.fullscreen;
+    $("downloadLink").innerText = t.download;
+    $("langFlag").innerText = lang === "th" ? "🇬🇧" : "🇹🇭";
+    $("langLabel").innerText = lang === "th" ? "English" : "ไทย";
+    $("yearBtnText").innerText = t.viewYears;
+    $("adminTitle").innerText = t.adminTitle;
+    $("adminDesc").innerText = t.adminDesc;
+    $("lblYear").innerText = t.lblYear;
+    $("lblFile").innerText = t.lblFile;
+    $("btnUpload").innerText = t.btnUpload;
+    $("btnDelete").innerText = t.btnDelete;
+    renderChips();
+}
+
+function toggleLang() {
+    lang = lang === "th" ? "en" : "th";
+    localStorage.setItem("lang", lang);
+    applyLang();
 }
     </script>
 </body>
